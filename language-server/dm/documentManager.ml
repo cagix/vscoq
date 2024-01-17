@@ -128,6 +128,26 @@ let make_diagnostic doc range oloc message severity code =
   Diagnostic.create ?code ?data ~range ~message ~severity ()
 
 let mk_diag st (id,(lvl,oloc,msg)) =
+  let code =
+    match lvl with
+    | Feedback.Warning quickfixes when oloc <> None ->
+      let code : Jsonrpc.Id.t * Lsp.Import.Json.t =
+        let open Lsp.Import.Json in
+        (`String "quickfix-replace",
+         quickfixes |> yojson_of_list
+         (fun pp ->
+            let s = Pp.string_of_ppcmds pp in
+            let range =
+              match oloc with
+              | None -> assert false
+              | Some loc ->
+                RawDocument.range_of_loc (Document.raw_document st.document) loc
+            in
+            QuickFixData.yojson_of_t (QuickFixData.{range; text = s})
+        ))
+        in
+      Some code
+      | _ -> None in
   let lvl = DiagnosticSeverity.of_feedback_level lvl in
   make_diagnostic st.document (Document.range_of_id st.document id) oloc (Pp.string_of_ppcmds msg) lvl
 

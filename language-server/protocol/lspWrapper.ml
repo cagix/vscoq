@@ -66,6 +66,10 @@ module Range = struct
 
 end 
 
+module QuickFixData = struct
+  type t = {text: string; range: Range.t} [@@deriving yojson]
+end 
+
 module DiagnosticSeverity = struct
 
   type t = [%import: Lsp.Types.DiagnosticSeverity.t] [@@deriving sexp]
