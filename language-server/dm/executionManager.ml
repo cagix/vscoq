@@ -755,17 +755,15 @@ let all_feedback st =
   List.fold_left (fun acc (id, (_,l)) -> List.map (fun x -> (id, x)) l @ acc) [] @@ SM.bindings st.of_sentence
 
 let shift_overview st raw_doc ~start ~offset =
-  let shift_loc loc =
-    let (loc_start, loc_stop) = Loc.unloc loc in
-    if loc_start >= start then Loc.shift_loc offset offset loc
-    else if loc_stop > start then Loc.shift_loc 0 offset loc
-    else loc
+  let shift_loc loc_start loc_end =
+    if loc_start >= start then (loc_start + offset, loc_end + offset)
+    else if loc_end > start then (loc_start, loc_end + offset)
+    else (loc_start, loc_end)
   in
   let shift_range range =
     let r_start = RawDocument.loc_of_position raw_doc range.Range.start in
     let r_stop = RawDocument.loc_of_position raw_doc range.Range.end_ in
-    let r_start' = shift_loc r_start in
-    let r_stop' = shift_loc r_stop in
+    let r_start', r_stop' = shift_loc r_start r_stop in
     Range.create ~start:(RawDocument.position_of_loc raw_doc r_start') ~end_:(RawDocument.position_of_loc raw_doc r_stop')
   in
   let processed = CList.Smart.map shift_range st.overview.processed in
